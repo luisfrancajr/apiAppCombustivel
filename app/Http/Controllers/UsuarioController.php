@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Usuario;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use stdClass;
 
 class UsuarioController extends Controller
 {
@@ -36,6 +38,27 @@ class UsuarioController extends Controller
     public function store(Request $request)
     {
         //
+        $us = $request->all();
+        $usuario = new Usuario();
+        $usuario->nome = $us['nome'];
+        $usuario->email = $us['email'];
+        $usuario->senha = $us['senha'];
+
+        $usuarioExiste = Usuario::where('email', $us['email'])->first();
+
+        if ($usuarioExiste) {
+            return response('Já existe um usuário com esse email registrado.', 400);
+        }
+
+        $confirmarSenha = $us['confirmarSenha'];
+        if ( $usuario->senha != $confirmarSenha ) {
+            return response('As senhas não coincidem.', 400);
+        }
+
+        $usuario->senha = Hash::make($usuario->senha);
+
+        $usuario->save();
+        return $usuario;
     }
 
     /**
@@ -44,9 +67,10 @@ class UsuarioController extends Controller
      * @param  \App\Models\Usuario  $usuario
      * @return \Illuminate\Http\Response
      */
-    public function show(Usuario $usuario)
+    public function show(int $usuario_id)
     {
         //
+        return Usuario::with('carros')->find($usuario_id);
     }
 
     /**
@@ -81,5 +105,26 @@ class UsuarioController extends Controller
     public function destroy(Usuario $usuario)
     {
         //
+    }
+
+    public function login(Request $request) {
+        $email = $request->input('email');
+        $senha = $request->input('senha');
+
+        if (!$email || !$senha) {
+            return response('Credenciais inválidas.', 400);
+        }
+
+        $usuario = Usuario::where('email', $email)->first();
+
+        if (!$usuario) {
+            return response('Credenciais inválidas.', 400);
+        }
+
+        if (!Hash::check($senha, $usuario->senha)) {
+            return response('Credenciais inválidas.', 400);
+        }
+
+        return $usuario;
     }
 }
