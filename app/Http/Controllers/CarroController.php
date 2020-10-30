@@ -65,7 +65,7 @@ class CarroController extends Controller
         }
 
         $carro->save();
-        return response('Carro cadastrado com sucesso.', 201);
+        return $carro;
     }
 
     /**
