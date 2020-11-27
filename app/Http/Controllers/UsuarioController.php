@@ -94,6 +94,39 @@ class UsuarioController extends Controller
     public function update(Request $request, Usuario $usuario)
     {
         //
+        if (!$usuario) return response('Usuário Inválido', 400);
+
+        $nome = $request->input('nome');
+        $email = $request->input('email');
+        $senha = $request->input('senha');
+        $confirmarSenha = $request->input('confirmarSenha');
+
+        if (!$nome) return response('Campo nome é obrigatório.', 422);
+        if (!$email) return response('Campo email é obrigatório.', 422);
+
+        if ($email != $usuario->email) {
+            $checkEmail = Usuario::where('email', '=', $email)->first();
+            if ($checkEmail) return response('Já existe um usuário com esse email', 422);
+        }
+
+        if ($senha) {
+            if ($senha != $confirmarSenha) return response('As senhas não coincidem.', 422);
+        }
+
+        $usuario->nome = $nome;
+        $usuario->email = $email;
+        if ($senha) {
+            $usuario->senha = Hash::make($senha);
+        }
+
+        $res = $usuario->save();
+
+        if ($res) {
+            return response($usuario, 200);
+        }
+
+        return response('Erro ao atualizar o usuário.', 400);
+
     }
 
     /**
